@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "anera": {
+      "type": "http",
+      "url": "https://app.anera.com.br/backend/mcp"
+    }
+  }
+}

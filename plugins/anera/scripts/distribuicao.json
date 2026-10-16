@@ -1,0 +1,11 @@
+{
+  "repositorio": "https://github.com/fernandoarml/Anera_Claude_Plugin.git",
+  "versao_url": "https://raw.githubusercontent.com/fernandoarml/Anera_Claude_Plugin/main/versao.json",
+  "marketplace": "anera-marketplace",
+  "plugin": "anera",
+  "suporte": {
+    "email": "suporte.claude@anera.com.br",
+    "whatsapp": "(27) 99751-6427",
+    "site": "https://www.anera.com.br"
+  }
+}

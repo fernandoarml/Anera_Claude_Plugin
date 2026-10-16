@@ -1,0 +1,22 @@
+{
+  "name": "anera",
+  "displayName": "ANERA — Escritório de Advocacia",
+  "version": "0.3.0",
+  "description": "Transforma uma pasta em escritório de advocacia organizado no Claude, integrado ao ANERA: clientes e casos, contratos e procurações preenchidos, peças no padrão do escritório, protocolo, prazos, intimações e memória de cada caso. Comece com /anera:ajuda.",
+  "author": {
+    "name": "ANERA",
+    "url": "https://www.anera.com.br"
+  },
+  "homepage": "https://www.anera.com.br",
+  "license": "UNLICENSED",
+  "keywords": [
+    "advocacia",
+    "juridico",
+    "anera",
+    "escritorio",
+    "prazos",
+    "intimacoes",
+    "contratos"
+  ],
+  "repository": "https://github.com/fernandoarml/Anera_Claude_Plugin"
+}

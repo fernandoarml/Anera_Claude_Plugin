@@ -1,0 +1,11 @@
+{
+  "plugin": "anera",
+  "versao": "0.3.0",
+  "publicado_em": "2026-10-16",
+  "novidades": [
+    "Distribuição pelo GitHub: /plugin marketplace add https://github.com/fernandoarml/Anera_Claude_Plugin.git (o Claude Code não aceita catálogo hospedado fora de um repositório git nesta configuração).",
+    "Aviso de versão nova passa a consultar o versao.json do repositório."
+  ],
+  "claude_code_minimo": "2.1.224",
+  "atualizar": "/plugin marketplace update anera-marketplace"
+}

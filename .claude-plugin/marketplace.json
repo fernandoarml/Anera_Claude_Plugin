@@ -1,0 +1,23 @@
+{
+  "name": "anera-marketplace",
+  "description": "Plugins do ANERA para o Claude: estrutura de escritório de advocacia integrada ao sistema de gestão ANERA.",
+  "owner": {
+    "name": "ANERA",
+    "url": "https://www.anera.com.br"
+  },
+  "plugins": [
+    {
+      "name": "anera",
+      "source": "./plugins/anera",
+      "description": "Escritório de advocacia no Claude, integrado ao ANERA: clientes e casos organizados, contratos e procurações automáticos, peças no padrão do escritório, prazos e intimações do ANERA.",
+      "category": "juridico",
+      "tags": [
+        "advocacia",
+        "juridico",
+        "anera",
+        "escritorio",
+        "prazos"
+      ]
+    }
+  ]
+}

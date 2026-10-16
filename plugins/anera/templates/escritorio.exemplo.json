@@ -1,0 +1,31 @@
+{
+  "versao_config": 1,
+  "advogado": {
+    "nome": "Maria da Silva Souza",
+    "oab_uf": "SP",
+    "oab_numero": "123.456",
+    "cpf": "000.000.000-00"
+  },
+  "escritorio": {
+    "nome": "Silva Souza Advocacia",
+    "endereco": "Rua Exemplo, 100, sala 2",
+    "cidade_uf": "Campinas/SP",
+    "cep": "13000-000",
+    "email": "contato@exemplo.adv.br",
+    "site": "www.exemplo.adv.br",
+    "telefone_principal": "(19) 90000-0001",
+    "telefones_oficiais": ["(19) 90000-0001", "(19) 90000-0002"]
+  },
+  "visual": {
+    "cor_principal": "16304D",
+    "timbrado": "03_MODELOS/_base/timbrado.docx"
+  },
+  "areas": [
+    {"area": "Previdenciário", "sigla": "PREV", "pasta": "previdenciario"},
+    {"area": "Cível geral", "sigla": "CIVEL", "pasta": "civel"}
+  ],
+  "anera": {
+    "usar": true,
+    "url": "https://app.anera.com.br/backend/mcp"
+  }
+}
