@@ -1,6 +1,6 @@
 # Conector ANERA — referência de uso
 
-> Usado pelo plugin `anera` para o Claude se conectar ao ANERA. Servidor v1.5.0.
+> Usado pelo plugin `anera` para o Claude se conectar ao ANERA. Servidor v1.6.0.
 > Endereço: `https://app.anera.com.br/backend/mcp` (remoto, OAuth 2.1 — não há token para copiar nem nada para instalar).
 
 ## Conectar
@@ -164,7 +164,8 @@ Devolve `anotacoes[] {uuid, texto, autor, criado_em, anexos[]}`, da mais recente
   - `motivo_arquivamento` e `resultado_arquivamento`, **só quando arquivado**;
   - `prazos_pendentes[]` e `ultimas_anotacoes[]` (as 5 mais recentes);
   - `criado_pela_ia_aguardando_revisao`, quando for o caso.
-- **Uso:** atendimento é a consulta ou caso ainda não judicializado. É o "caso pré-processual".
+- **Uso:** atendimento é a consulta ou caso ainda não judicializado. É o "caso pré-processual" do
+  prompt original.
 
 #### `anera_listar_responsaveis` — `leitura`
 Sem parâmetros. Devolve `usuarios[] {uuid, nome, funcao, oab, voce}`. Use para escolher o responsável
@@ -400,19 +401,59 @@ estava ligada a outro processo, ela é transferida e a resposta avisa.
 
 O `initialize` do servidor já instrui o Claude nessa ordem.
 
-### 3.5 Modelos de documentos *(servidor 1.6.0 — em implementação)*
+### 3.5 Modelos de documentos do plugin
+
+Os modelos de contrato de honorários, procuração e declaração são o conteúdo exclusivo do plugin. O
+repositório do plugin no GitHub é público, então os modelos **não ficam nele**: saem só pelo conector,
+atrás do OAuth.
+
+- **Liberação:** liberados para todos os escritórios com conta ativa. O suporte pode bloquear um
+  escritório gravando `plugin_modelos_liberado = 0` nas configurações dele (`clientes_configuracoes`).
+- **Permissão:** as duas ferramentas usam o escopo `leitura`, então ninguém precisa reconectar.
+- **Conteúdo:** o servidor não altera nem preenche os arquivos. A personalização (dados do escritório,
+  timbrado, cor) é feita no computador do usuário, pelo plugin.
 
 #### `anera_listar_modelos` — `leitura`
-Sem parâmetros. **Retorno:** `{versao_pacote, atualizado_em, disponivel, motivo?, modelos[] {id, tipo, titulo, usa_timbrado}}`.
-Com `disponivel: false`, mostre o `motivo` ao usuário (os modelos são para assinantes).
+Sem parâmetros.
+- **Com acesso:** `{versao_pacote, atualizado_em, disponivel: true, modelos[] {id, tipo, titulo,
+  usa_timbrado}}`.
+- **Bloqueado ou sem pacote publicado:** `{disponivel: false, motivo}`, **sem** `isError`. O `motivo`
+  é uma mensagem pronta para mostrar ao usuário, com o contato do suporte.
 
 #### `anera_link_modelos` — `leitura`
-`ids` (opcional; sem ele, pacote completo). **Retorno:** `{url, expira_em, arquivo, tamanho, sha256, versao_pacote, como_baixar}`.
-- Link de **15 minutos**, uso único, só para a conexão que pediu.
-- Baixe direto para o disco (`curl -fsSL -o .claude/modelos-anera.zip "<url>"`), confira o `sha256` e instale com
-  `scripts/instalar_modelos.py --origem .claude/modelos-anera.zip ...` (confere cada arquivo pelo `manifesto.json`).
-  Nunca peça o conteúdo dos modelos na conversa.
-- Fluxo completo: `/anera:configurar-escritorio`, etapa 6.
+`ids` (lista de strings, opcional).
+- **Sem `ids`:** pacote completo.
+- **Com `ids`:** um zip só com os `.docx` pedidos e um `manifesto.json` filtrado, no mesmo formato do
+  original.
+- **Retorno:** `{url, expira_em, arquivo, tamanho, sha256, versao_pacote, modelos[], como_baixar}`.
+  - `sha256` é o do zip que será entregue (no parcial, o do zip montado).
+  - `como_baixar`: `curl -fsSL -o ".claude/modelos-anera.zip" "<url>"`.
+- **Erros (`isError`):**
+  - bloqueado (a mesma mensagem do `motivo`);
+  - sem pacote publicado;
+  - `id` inexistente (a mensagem lista os ids válidos);
+  - mais de **10 links por hora** na mesma conexão.
+
+#### Download: `GET /backend/mcp/modelos/{token}`
+- **Credencial:** o token da URL (256 bits). O `curl` não precisa de cabeçalho de autenticação.
+- **Validade:** **15 minutos e uma única vez**. O link também deixa de valer se a conexão for
+  desconectada.
+- **`200`:** `Content-Type: application/zip`, `Content-Disposition: attachment;
+  filename="modelos-anera-<versao>.zip"`, `Cache-Control: no-store`.
+- **Erros** (corpo em texto curto, em português):
+  - **`410`:** link inválido, expirado, já usado ou conexão encerrada;
+  - **`403`:** escritório bloqueado no momento do download.
+- **Auditoria:** cada download efetivo fica registrado com escritório, usuário, conexão, data e hora,
+  versão, ids, IP e programa usado. O registro fica no histórico do escritório no ANERA.
+
+#### Fluxo no plugin (ex.: `/anera:configurar-escritorio`)
+1. `anera_listar_modelos`. Se vier `disponivel: false`, mostrar o `motivo` e seguir sem os modelos.
+2. `anera_link_modelos`, com `ids` ou sem, para o pacote completo.
+3. Rodar o `como_baixar` no Bash e conferir o `sha256` do arquivo baixado com o devolvido.
+4. Extrair localmente e personalizar com os dados do escritório.
+5. **Nunca** transcrever o conteúdo dos modelos na conversa. O `initialize` do servidor já instrui o
+   Claude nesse sentido.
+
 
 ---
 
@@ -443,7 +484,7 @@ Com `disponivel: false`, mostre o `motivo` ao usuário (os modelos são para ass
 
 | Comando | Com o ANERA conectado |
 |---|---|
-| `/configurar-escritorio` | `anera_status` para testar a conexão e mostrar as permissões. Também `anera_listar_responsaveis` para pré-preencher advogados e OAB, e `anera_listar_modelos` → `anera_link_modelos` + `curl` para baixar e instalar os modelos. |
+| `/configurar-escritorio` | `anera_status` para testar a conexão e mostrar as permissões. Também `anera_listar_responsaveis` para pré-preencher advogados e OAB, e `anera_listar_modelos` → `anera_link_modelos` + `curl` para baixar e instalar os modelos (etapa 6). |
 | `/buscar` | `anera_buscar_clientes` / `anera_buscar_processos`, seguidos de `anera_obter_processo` (próximo prazo e último andamento) |
 | `/novo-cliente` | `anera_buscar_clientes` (CPF), depois `anera_cadastrar_cliente` ou `anera_atualizar_cliente` com dados extraídos de RG, CNH e comprovante. Grava o uuid na `CLIENTE.md`. |
 | `/novo-processo` | `anera_opcoes_processo`, depois `anera_cadastrar_processo`. Grava o uuid na `PROCESSO.md`. |
@@ -453,8 +494,8 @@ Com `disponivel: false`, mostre o `motivo` ao usuário (os modelos são para ass
 | `/preparar-documentos` | `anera_criar_anotacao` registrando o protocolo, com a peça e os documentos protocolados anexados via `anera_link_anexos` + `curl`. Opcionalmente `anera_concluir_prazo` do prazo cumprido. |
 | `/arquivar` | Ainda não há ferramenta para arquivar processo (§6). Registrar com `anera_criar_anotacao`. |
 | Atendimento (consultas ainda não judicializadas) | `anera_buscar_atendimentos` → `anera_obter_atendimento` (relato + últimas anotações) → `anera_criar_anotacao` (`referencia: "atendimentos"`, com anexos se houver) / `anera_atualizar_atendimento` → ao final, `anera_arquivar_atendimento` |
-| `/painel` | `anera_painel`. Destaque os itens com `criado_pela_ia_aguardando_revisao` e lembre de validá-los no ANERA. |
-| `/novidades` | `anera_novidades` (andamentos) e `anera_listar_publicacoes` (intimações). Por item, sugestão de providência e, com confirmação, o fluxo de §3.4: `anera_calcular_prazo` → `anera_criar_prazo` (com `publicacao_uuid`) → `anera_marcar_publicacao_lida` |
+| `/painel` *(novo)* | `anera_painel`. Destaque os itens com `criado_pela_ia_aguardando_revisao` e lembre de validá-los no ANERA. |
+| `/novidades` *(novo)* | `anera_novidades` (andamentos) e `anera_listar_publicacoes` (intimações). Por item, sugestão de providência e, com confirmação, o fluxo de §3.4: `anera_calcular_prazo` → `anera_criar_prazo` (com `publicacao_uuid`) → `anera_marcar_publicacao_lida` |
 
 ---
 
@@ -462,11 +503,12 @@ Com `disponivel: false`, mostre o `motivo` ao usuário (os modelos são para ass
 
 | Item | Situação |
 |---|---|
-| Guardar no ANERA o caminho da pasta do cliente | não existe (o vínculo é o `uuid ANERA` na ficha) |
+| `referencia_pasta` em cliente e processo | não existe |
+| Registrar documento gerado (metadados) | **resolvido via anotação com anexo** (§3.2) |
 | Arquivar processo / alterar situação | não exposto |
 | Tipos de anotação (histórico/decisão/pendência, resolver pendência) | não existe; usar prefixo |
-| Marcar prazo fatal, responsável do processo e fase | não existe |
-| Avisos em tempo real | não existe (o Claude consulta quando você pede, ex.: `/anera:painel`) |
+| `fatal` em prazo, responsável do processo, `fase` | não existem no modelo de dados |
+| Webhooks / tempo real (fase 3) | não existe |
 
 Nesses casos, faça direto no ANERA.
 

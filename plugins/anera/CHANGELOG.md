@@ -1,5 +1,8 @@
 # Changelog — plugin anera
 
+## 0.3.1 — prévia (16/10/2026)
+- Referência do conector atualizada para o servidor 1.6.0: anera_listar_modelos e anera_link_modelos disponíveis (modelos liberados para escritórios com conta ativa).
+
 ## 0.3.0 — prévia (16/10/2026)
 - Distribuição pelo GitHub: /plugin marketplace add https://github.com/fernandoarml/Anera_Claude_Plugin.git (o Claude Code não aceita catálogo hospedado fora de um repositório git nesta configuração).
 - Aviso de versão nova passa a consultar o versao.json do repositório.
